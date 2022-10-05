@@ -3,3 +3,5 @@ __pycache__/
 
 MoveCalendars.py
 token.json
+
+credentials.json

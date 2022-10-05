@@ -1,4 +1,5 @@
 import os.path
+import json
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -38,10 +39,10 @@ def main():
         # holds all events for all calendars
         allEvents = []
         # If you want to exclude any calendars from the list to change,
-        # add the NAME of the calendar to the list
-        EXCLUSIONS = []
+        # add the ID of the calendar to the list
+        EXCLUSIONS = ["INSERT CALENDAR IDs OF CALENDARS YOU WANT TO EXCLUDE"]
         # ID of calendar you want to move events to (destination of moved events)
-        TARGET_CALENDAR_ID = ""
+        TARGET_CALENDAR_ID = "INSERT TARGET CALENDAR ID HERE"
         # Starting time to target the events (Currently this is set to JAN 1st, 2021)
         # This means it will only gather events from 01/01/2021 - PRESENT
         TIME_MIN = "2021-01-01T10:00:00-07:00"
@@ -62,7 +63,7 @@ def main():
                         # Get list of events, loop and append each to allEvents
                         events = service.events().list(calendarId=calendar_list_entry['id'], pageToken=page_token_events, timeMin=TIME_MIN).execute()
                         for event in events['items']:
-                            allEvents.append(event)
+                            allEvents.append({"calendarID": event['organizer']['email'], "eventID": event['id'], "eventName": event['summary'], "calendarName": event['organizer']['displayName']})
                         
                         # Get next page of events 
                         page_token_events = events.get('nextPageToken')
@@ -76,12 +77,31 @@ def main():
         
         # UPDATE THE CALENDARS
         try: 
-            for event in allEvents:
-                service.events().move(
-                    calendarId=event['organizer']['email'], eventId=event['id'],
-                    destination=TARGET_CALENDAR_ID
-                ).execute()
-            print("Complete!")
+            print('Choose:')
+            print('(1) Print Calendars Of Events To Move')
+            print('(2) Show All Events Being Changed')
+            print('(3) Move Events')
+            choice = int(input('Enter: '))
+
+            if (choice == 1):
+                print('Calendars To Move')
+                for cal in calendars:
+                    print(cal['id'])
+            elif (choice == 2):
+                print('Show All Events To Change')
+                print('# of Events: {}'.format(len(allEvents)))
+                for event in allEvents:
+                    print('{} -> {}'.format(event['calendarName'], event['eventName']))
+            elif (choice == 3):
+                for event in allEvents:
+                    service.events().move(
+                        calendarId=event['calendarID'],
+                        eventId=event['eventID'],
+                        destination=TARGET_CALENDAR_ID
+                    ).execute()
+                print("Move Complete!")
+            else:
+                print('Invalid Entry...')
             
         except Exception as error:
             print("An error occurs {}".format(error)) 
